@@ -6,6 +6,13 @@ const c = @cImport({
 
 const build_options = @import("lfs_build_options");
 
+export fn lfs_debug_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
+    var va_list = @cVaStart();
+    std.debug.print("lfs debug call fmt: {s}", .{fmt});
+    @cVaEnd(&va_list); 
+    return 0;
+}
+
 pub const LfsGlobalError = error{
     IoErr,
     CorruptErr,

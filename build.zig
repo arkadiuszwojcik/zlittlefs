@@ -31,7 +31,7 @@ pub fn build(b: *std.Build) !void {
     });
 
     // Remove printf usage so stdio.h is not required (stdio right now is not supported in foundation libc)
-    zlittlefs_mod.addCMacro("LFS_NO_DEBUG", "");
+    //zlittlefs_mod.addCMacro("LFS_NO_DEBUG", "");
     zlittlefs_mod.addCMacro("LFS_NO_WARN", "");
     zlittlefs_mod.addCMacro("LFS_NO_ERROR", "");
     zlittlefs_mod.addCMacro("LFS_DEFINES", "custom_defines.h");
