@@ -44,10 +44,6 @@ inline fn mapGenericError(code: c.lfs_error) LfsGlobalError!void {
     };
 }
 
-pub fn mapSomeError() LfsGlobalError!void {
-    return mapGenericError(c.LFS_ERR_NOTEMPTY);
-}
-
 pub inline fn throw(error_code: c_int) LfsGlobalError!void {
     return mapGenericError(error_code);
 }
