@@ -8,10 +8,6 @@
             .url = "https://github.com/littlefs-project/littlefs/archive/refs/tags/v2.10.1.tar.gz",
             .hash = "122029bf36f1d5cfd45a2edaaf27893e092832d3bb39677a7ef7005d54ceb81545de"
         },
-        .foundation_libc = .{
-             .url = "git+https://github.com/ZigEmbeddedGroup/foundation-libc#5281055623dff89af7b05572f5aebae0f606e6a1",
-             .hash = "1220048600075db8d58faa59d9671e7e4056d134d1f53b0efd9774d01321ef3e343e",
-        }
     },
 
     .paths = .{

@@ -14,11 +14,6 @@ pub fn build(b: *std.Build) !void {
     const build_options = b.addOptions();
     build_options.addOption(bool, "lfs_no_malloc", lfs_no_malloc);
     build_options.addOption(?u16, "lfs_name_max", lfs_name_max);
-    
-    const foundationlibc_dep = b.dependency("foundation_libc", .{
-        .target = target,
-        .optimize = optimize,
-    });
 
     const littlefs_c_dep = b.dependency("littlefs_c", .{
         .target = target,
@@ -29,7 +24,6 @@ pub fn build(b: *std.Build) !void {
         .root_source_file = b.path("src/littlefs.zig"),
     });
 
-    zlittlefs_mod.addIncludePath(foundationlibc_dep.path("include"));
     zlittlefs_mod.addIncludePath(littlefs_c_dep.path(""));
     zlittlefs_mod.addIncludePath(b.path("src/custom_include"));
 
