@@ -8,11 +8,9 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
     
     const link_libc = !(b.option(bool, "no-libc", "Prevents linking of libc by default") orelse false);
-    const lfs_no_malloc = b.option(bool, "lfs-no-malloc", "LFS: Use provided buffers instead of malloc") orelse true;
     const lfs_name_max = b.option(u16, "lfs-name-max", "LFS: Maximum name size in bytes, may be redefined to reduce the size of the info struct");
 
     const build_options = b.addOptions();
-    build_options.addOption(bool, "lfs_no_malloc", lfs_no_malloc);
     build_options.addOption(?u16, "lfs_name_max", lfs_name_max);
 
     const littlefs_c_dep = b.dependency("littlefs_c", .{
@@ -37,9 +35,7 @@ pub fn build(b: *std.Build) !void {
     zlittlefs_mod.addCMacro("LFS_NO_WARN", "");
     zlittlefs_mod.addCMacro("LFS_NO_ERROR", "");
     zlittlefs_mod.addCMacro("LFS_DEFINES", "custom_defines.h");
-    if (lfs_no_malloc) {
-        zlittlefs_mod.addCMacro("LFS_NO_MALLOC", "");
-    }
+    zlittlefs_mod.addCMacro("LFS_NO_MALLOC", "");
     if (lfs_name_max != null) {
         const str_value: []const u8 = b.fmt("{d}", .{lfs_name_max.?});
         zlittlefs_mod.addCMacro("LFS_NAME_MAX", str_value);

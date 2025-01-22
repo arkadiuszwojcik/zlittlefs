@@ -6,13 +6,6 @@ const c = @cImport({
 
 const build_options = @import("lfs_build_options");
 
-comptime {
-    if (build_options.lfs_no_malloc == false) {
-        @export(custom_lfs_malloc, .{ .name = "custom_lfs_malloc", .linkage = .strong });
-        @export(custom_lfs_free, .{ .name = "custom_lfs_free", .linkage = .strong });
-    }
-}
-
 pub const api = struct {
     pub const format = c.lfs_format;
     pub const mount = c.lfs_mount;
@@ -68,29 +61,7 @@ pub inline fn throw(error_code: c_int) LfsGlobalError!void {
 
 const lfs_global = struct {
     pub const name_max = build_options.lfs_name_max;
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    pub var allocator: std.mem.Allocator = gpa.allocator();
-    pub var endianness: std.builtin.Endian = std.builtin.Endian.little;
 };
-
-fn custom_lfs_malloc(size: usize) callconv(.C) ?*anyopaque {
-    std.log.info("malloc: {}", .{size});
-    const raw_mem = lfs_global.allocator.alloc(u8, @sizeOf(usize) + size) catch return null;
-    std.mem.writeInt(usize, raw_mem[0..@sizeOf(usize)], size, lfs_global.endianness);
-    const user_mem = raw_mem[@sizeOf(usize)..];
-    return @ptrCast(user_mem.ptr);
-}
-
-fn custom_lfs_free(ptr: *anyopaque) callconv(.C) void {
-    std.log.info("free: ", .{});
-    const user_mem_ptr = @as([*]u8, @ptrCast(ptr));
-    const raw_mem_ptr = user_mem_ptr - @sizeOf(usize);
-    const raw_mem = @as([*]u8, @ptrCast(raw_mem_ptr));
-
-    const size = std.mem.readInt(usize, raw_mem[0..@sizeOf(usize)], lfs_global.endianness);
-    const raw_mem_slice = raw_mem[0..size + @sizeOf(usize)];
-    lfs_global.allocator.free(raw_mem_slice);
-}
 
 pub const Kind = enum {
     unknown,
