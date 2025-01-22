@@ -39,14 +39,14 @@ pub fn main() !void {
     std.debug.print("1. File: {s} - writing text: {s}\n", .{"test_file.txt", text1});
     var file1 = try root_dir.open_file("test_file.txt", .{ .mode = .write_only, .create = true }, gpa.allocator());
     _ = try file1.write(text1);
-    file1.close(gpa.allocator());
+    try file1.close(gpa.allocator());
 
     // Appending to file
     const text2 = "This is another text that we will append to file.";
     std.debug.print("2. File: {s} - appending text: {s}\n", .{"test_file.txt", text2});
     var file2 = try root_dir.open_file("test_file.txt", .{ .mode = .write_only, .create = false, .append = true }, gpa.allocator());
     _ = try file2.write(text2);
-    file2.close(gpa.allocator());
+    try file2.close(gpa.allocator());
 
     // Reading from file
     var text_buff: [100]u8 = undefined;
@@ -54,7 +54,7 @@ pub fn main() !void {
     const read_size = try file3.read(&text_buff);
     const read_str = text_buff[0..read_size];
     std.debug.print("3. File: {s} - content: {s}\n", .{"test_file.txt", read_str});
-    file3.close(gpa.allocator());
+    try file3.close(gpa.allocator());
 
     std.debug.print("\n\n", .{});
     std.debug.print("------- root dir structure -------\n", .{});

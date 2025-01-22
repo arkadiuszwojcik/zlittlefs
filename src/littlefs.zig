@@ -240,11 +240,15 @@ pub fn LfsFileSystem(comptime storage_type: type, comptime prealloc: bool) type 
             return File { .fs = self, .file_handle = file, .file_cfg_handle = file_cfg, .file_cache = file_cache };
         }
 
-        pub fn close_file(self: *Self, file: *File, allocator: std.mem.Allocator) void {
-            _ = c.lfs_file_close(&self.fs.?, file.file_handle);
+        pub fn close_file(self: *Self, file: *File, allocator: std.mem.Allocator) LfsGlobalError!void {
+            try throw (c.lfs_file_close(&self.fs.?, file.file_handle));
             allocator.free(file.file_cache);
             self.file_pool.destroy(file.file_handle);
             self.filecfg_pool.destroy(file.file_cfg_handle);
+        }
+
+        pub fn sync_file(self: *Self, file: *File) LfsGlobalError!void {
+            try throw(c.lfs_file_sync(&self.fs.?, file.file_handle));
         }
 
         pub fn mkdir(self: *Self, sub_path: [:0]const u8) LfsGlobalError!void {
@@ -301,8 +305,12 @@ pub fn LfsFileSystem(comptime storage_type: type, comptime prealloc: bool) type 
             file_cfg_handle: *c.lfs_file_config,
             file_cache: []u8,
 
-            pub fn close(self: *FileSelf, allocator: std.mem.Allocator) void {
-                self.fs.close_file(self, allocator);
+            pub fn close(self: *FileSelf, allocator: std.mem.Allocator) LfsGlobalError!void {
+                return self.fs.close_file(self, allocator);
+            }
+
+            pub fn sync(self: *FileSelf) LfsGlobalError!void {
+                return self.fs.sync_file(self);
             }
 
             // TODO: examine max write chunk size, if necessary create new api with loop that will write entire buffer
