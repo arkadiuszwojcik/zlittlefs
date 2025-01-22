@@ -6,13 +6,6 @@ const c = @cImport({
 
 const build_options = @import("lfs_build_options");
 
-pub const api = struct {
-    pub const format = c.lfs_format;
-    pub const mount = c.lfs_mount;
-    pub const unmount = c.lfs_unmount;
-    pub const mkdir = c.lfs_mkdir;
-};
-
 pub const LfsGlobalError = error{
     IoErr,
     CorruptErr,
