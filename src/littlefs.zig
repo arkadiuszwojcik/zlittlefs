@@ -100,7 +100,11 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
 fn vformat_cfmt_code(writer: anytype, code: u8, _: cfmt_len, va_list: *std.builtin.VaList) !void {
     switch (code) {
         'c' => try std.fmt.format(writer, "{c}", .{@as(u8, @truncate(@cVaArg(va_list, c_uint)))}),
-        'd' => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_int)}),
+        'd','i' => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_int)}),
+        'u', => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_uint)}),
+        'o', => try std.fmt.format(writer, "{o}", .{@cVaArg(va_list, c_uint)}),
+        'x', => try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_uint)}),
+        'X', => try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_uint)}),
         'p' => try std.fmt.format(writer, "{*}", .{@cVaArg(va_list, *anyopaque)}),
         //'s' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
         's' => {
