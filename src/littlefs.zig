@@ -6,11 +6,99 @@ const c = @cImport({
 
 const build_options = @import("lfs_build_options");
 
-export fn lfs_debug_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
+export fn lfs_debug_printf(_: [*:0]const u8, ...) callconv(.C) c_int {
+    //var va_list = @cVaStart();
+    //std.debug.print("lfs debug call fmt: {s}", .{fmt});
+    //@cVaEnd(&va_list);
+    unreachable; 
+}
+
+export fn lfs_trace_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
     var va_list = @cVaStart();
-    std.debug.print("lfs debug call fmt: {s}", .{fmt});
-    @cVaEnd(&va_list); 
+    var buf1: [4024]u8 = undefined;
+    const b = std.io.FixedBufferStream(&buf1) {};
+    _ = vformat_cfmt(b.Writer, fmt, &va_list);
+    std.debug.print("buffer: {s}", .{buf1});
+    @cVaEnd(&va_list);
     return 0;
+}
+
+const cfmt_len = enum {
+    none,
+    h,
+    l,
+    L,
+    // C99
+    hh,
+    ll,
+    j,
+    z,
+    t,
+};
+
+fn get_cfmt_len(fmt: [*:0]const u8) cfmt_len {
+    const c1 = fmt[0];
+    return switch (c1) {
+        0 => .none,
+        'j' => .j,
+        'z' => .z,
+        't' => .t,
+        'L' => .L,
+        'l' => {
+            const c2 = fmt[1];
+            if (c2 == 'l') .ll else .l;
+        },
+        'h' => {
+            const c2 = fmt[1];
+            if (c2 == 'h') .hh else .h;
+        },
+        else => .none
+    };
+}
+
+fn get_cfmt_len_size(len: cfmt_len) u8 {
+    return switch (len) {
+        .none => 0,
+        .hh,.ll => 2,
+        else => 1
+    };
+}
+
+fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) callconv(.C) !void {
+    var i: usize = 0;
+    var s_start: usize = 0;
+    var s_end: usize = 0;
+
+    while (fmt[i] != 0) {
+        if (fmt[i] != '%') {
+            i = i + 1;
+            s_end = s_end + 1;
+            continue;
+        }
+        try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
+        s_start = i;
+        s_end = i;
+        const l = get_cfmt_len(fmt[i..]);
+        i = i + get_cfmt_len_size(l);
+        const code = fmt[i];
+        if (code != 0) {
+            try vformat_cfmt_code(writer, code, va_list);
+            i = i + 1;
+        }
+    }
+
+    try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
+}
+
+fn vformat_cfmt_code(writer: anytype, code: u8, _: cfmt_len, va_list: *std.builtin.VaList) !void {
+    switch (code) {
+        'c' => try std.fmt.format(writer, "{c}", .{@as(u8, @truncate(@cVaArg(va_list, c_int)))}),
+        'd' => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_int)}),
+        'p' => try std.fmt.format(writer, "{x}", .{@as(c_long, @intFromPtr(@cVaArg(va_list, *anyopaque)))}),
+        's' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
+        '%' => try std.fmt.format(writer, "%", .{}),
+        else => try std.fmt.format(writer, "{c}", .{code}),
+    }
 }
 
 pub const LfsGlobalError = error{
