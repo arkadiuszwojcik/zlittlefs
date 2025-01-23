@@ -80,7 +80,7 @@ fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.buil
     var s_start: usize = 0;
     var s_end: usize = 0;
 
-    const count_writer = std.io.countingWriter(writer);
+    var count_writer = std.io.countingWriter(writer);
     const any_count_writer = count_writer.writer();
 
     while (fmt[i] != 0) {
