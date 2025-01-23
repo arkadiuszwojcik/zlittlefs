@@ -17,12 +17,12 @@ export fn lfs_trace_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
     var va_list = @cVaStart();
 
     var buf: [4024]u8 = undefined;
-    var slice: []u8 = &buf;
+    const slice: []u8 = &buf;
     var fbs: std.io.FixedBufferStream([]u8) = undefined;
     fbs.buffer = slice;
     fbs.pos = 0;
 
-    _ = vformat_cfmt(fbs.writer(), fmt, &va_list);
+    _ = try vformat_cfmt(fbs.writer(), fmt, &va_list);
     std.debug.print("buffer: {s}", .{fbs});
     @cVaEnd(&va_list);
     return 0;
