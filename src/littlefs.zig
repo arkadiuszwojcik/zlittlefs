@@ -69,7 +69,7 @@ fn get_cfmt_len_size(len: cfmt_len) u8 {
     };
 }
 
-fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) callconv(.C) !void {
+fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) !void {
     var i: usize = 0;
     var s_start: usize = 0;
     var s_end: usize = 0;
