@@ -81,6 +81,7 @@ fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.buil
     var s_end: usize = 0;
 
     const count_writer = std.io.countingWriter(writer);
+    const any_count_writer = count_writer.writer();
 
     while (fmt[i] != 0) {
         if (fmt[i] != '%') {
@@ -89,13 +90,13 @@ fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.buil
             continue;
         }
         // format regular string before % specifier
-        try std.fmt.format(count_writer, "{s}", .{fmt[s_start..s_end]});
+        try std.fmt.format(any_count_writer, "{s}", .{fmt[s_start..s_end]});
         i = i + 1;
         const l = get_code_size(fmt[i..]);
         i = i + get_code_size_len(l);
         const code = fmt[i];
         if (code != 0) {
-            try zig_vfprintf_code(count_writer, code, l, va_list);
+            try zig_vfprintf_code(any_count_writer, code, l, va_list);
             i = i + 1;
         }
         s_start = i;
