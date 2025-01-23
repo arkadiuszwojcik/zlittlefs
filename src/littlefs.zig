@@ -97,20 +97,52 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
     try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
 }
 
-fn vformat_cfmt_code(writer: anytype, code: u8, _: cfmt_len, va_list: *std.builtin.VaList) !void {
+fn vformat_cfmt_code(writer: anytype, code: u8, code_len: cfmt_len, va_list: *std.builtin.VaList) !void {
     switch (code) {
         'c' => try std.fmt.format(writer, "{c}", .{@as(u8, @truncate(@cVaArg(va_list, c_uint)))}),
-        'd','i' => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_int)}),
-        'u', => try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_uint)}),
-        'o', => try std.fmt.format(writer, "{o}", .{@cVaArg(va_list, c_uint)}),
-        'x', => try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_uint)}),
-        'X', => try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_uint)}),
-        'p' => try std.fmt.format(writer, "{*}", .{@cVaArg(va_list, *anyopaque)}),
+        'd','i' => {
+            if (code_len == .ll) 
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_longlong)})
+            else if (code_len == .l)
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_long)})
+            else
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_int)});
+            // TODO: should we care about h and hh so int should be trucated?
+        },
+        'u' => {
+            if (code_len == .ll) 
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_ulonglong)})
+            else if (code_len == .l)
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_ulong)})
+            else
+                try std.fmt.format(writer, "{d}", .{@cVaArg(va_list, c_uint)});
+        },
+        'o' => {
+            if (code_len == .ll) 
+                try std.fmt.format(writer, "{o}", .{@cVaArg(va_list, c_ulonglong)})
+            else if (code_len == .l)
+                try std.fmt.format(writer, "{o}", .{@cVaArg(va_list, c_ulong)})
+            else
+                try std.fmt.format(writer, "{o}", .{@cVaArg(va_list, c_uint)});
+        },
+        'x' => {
+            if (code_len == .ll) 
+                try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_ulonglong)})
+            else if (code_len == .l)
+                try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_ulong)})
+            else
+                try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_uint)});
+        },
+        'X' => {
+            if (code_len == .ll) 
+                try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_ulonglong)})
+            else if (code_len == .l)
+                try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_ulong)})
+            else
+                try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_uint)});
+        },
+        'p' => try std.fmt.format(writer, "{x}", .{@intFromPtr(@cVaArg(va_list, *anyopaque))}),
         's' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
-        //'s' => {
-        //    _ = @cVaArg(va_list, [*:0]const u8);
-        //    try std.fmt.format(writer, "s", .{});
-        //},
         '%' => try std.fmt.format(writer, "%", .{}),
         else => try std.fmt.format(writer, "{c}", .{code}),
     }
