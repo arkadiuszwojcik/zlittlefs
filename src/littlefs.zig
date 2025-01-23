@@ -22,7 +22,7 @@ export fn lfs_trace_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
     fbs.buffer = slice;
     fbs.pos = 0;
 
-    const result = c_vfprintf(fbs.writer(), fmt, &va_list);
+    const result = c_vfprintf(fbs.writer().any(), fmt, &va_list);
     std.debug.print("buffer: {s}", .{buf});
     @cVaEnd(&va_list);
     return result;
