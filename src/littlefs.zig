@@ -43,22 +43,22 @@ const cfmt_len = enum {
 
 fn get_cfmt_len(fmt: [*:0]const u8) cfmt_len {
     const c1 = fmt[0];
-    return switch (c1) {
-        0 => .none,
-        'j' => .j,
-        'z' => .z,
-        't' => .t,
-        'L' => .L,
-        'l' => {
-            const c2 = fmt[1];
-            if (c2 == 'l') .ll else .l;
-        },
-        'h' => {
-            const c2 = fmt[1];
-            if (c2 == 'h') .hh else .h;
-        },
-        else => .none
-    };
+    if (c1 == 0) { return .none; }
+    else if (c1 == 'j') { return .j; }
+    else if (c1 == 'z') { return .z; }
+    else if (c1 == 't') { return .t; }
+    else if (c1 == 'L') { return .L; }
+    else if (c1 == 'l') {
+        const c2 = fmt[1];
+        return if (c2 == 'l') .ll else .l;
+    }
+    else if (c1 == 'h') {
+        const c2 = fmt[1];
+        return if (c2 == 'h') .hh else .h;
+    }
+    else {
+        return .none;
+    }
 }
 
 fn get_cfmt_len_size(len: cfmt_len) u8 {
@@ -87,7 +87,7 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
         i = i + get_cfmt_len_size(l);
         const code = fmt[i];
         if (code != 0) {
-            try vformat_cfmt_code(writer, code, va_list);
+            try vformat_cfmt_code(writer, code, l, va_list);
             i = i + 1;
         }
     }
