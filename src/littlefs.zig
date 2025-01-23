@@ -106,11 +106,11 @@ fn vformat_cfmt_code(writer: anytype, code: u8, _: cfmt_len, va_list: *std.built
         'x', => try std.fmt.format(writer, "{x}", .{@cVaArg(va_list, c_uint)}),
         'X', => try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_uint)}),
         'p' => try std.fmt.format(writer, "{*}", .{@cVaArg(va_list, *anyopaque)}),
-        //'s' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
-        's' => {
-            _ = @cVaArg(va_list, [*:0]const u8);
-            try std.fmt.format(writer, "s", .{});
-        },
+        's' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
+        //'s' => {
+        //    _ = @cVaArg(va_list, [*:0]const u8);
+        //    try std.fmt.format(writer, "s", .{});
+        //},
         '%' => try std.fmt.format(writer, "%", .{}),
         else => try std.fmt.format(writer, "{c}", .{code}),
     }
