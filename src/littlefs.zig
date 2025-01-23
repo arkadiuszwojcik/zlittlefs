@@ -80,9 +80,9 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
             s_end = s_end + 1;
             continue;
         }
+        // format regular string before % specifier
         try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
-        s_start = i;
-        s_end = i;
+        i = i + 1;
         const l = get_cfmt_len(fmt[i..]);
         i = i + get_cfmt_len_size(l);
         const code = fmt[i];
@@ -90,6 +90,8 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
             try vformat_cfmt_code(writer, code, l, va_list);
             i = i + 1;
         }
+        s_start = i;
+        s_end = i;
     }
 
     try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
