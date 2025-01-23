@@ -103,7 +103,7 @@ fn zig_vfprintf(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
         s_end = i;
     }
 
-    try std.fmt.format(count_writer, "{s}", .{fmt[s_start..s_end]});
+    try std.fmt.format(generic_count_writer, "{s}", .{fmt[s_start..s_end]});
 
     return count_writer.bytes_written;
 }
