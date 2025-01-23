@@ -22,7 +22,7 @@ export fn lfs_trace_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
     fbs.buffer = slice;
     fbs.pos = 0;
 
-    const result = c_vfprintf(fbs.writer().any(), fmt, &va_list);
+    const result = c_vfprintf(fbs.writer(), fmt, &va_list);
     std.debug.print("buffer: {s}", .{buf});
     @cVaEnd(&va_list);
     return result;
@@ -69,19 +69,19 @@ fn get_code_size_len(len: code_size) u8 {
     };
 }
 
-fn c_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.builtin.VaList) c_int {
+fn c_vfprintf(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) c_int {
     const c_uint7 = @Type(.{ .int = .{ .bits = @bitSizeOf(c_int)-1, .signedness = .unsigned } });
     const count = zig_vfprintf(writer, fmt, va_list) catch return -1;
     return @intCast(@as(c_uint7, @truncate(count)));
 }
 
-fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.builtin.VaList) !u64 {
+fn zig_vfprintf(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) !u64 {
     var i: usize = 0;
     var s_start: usize = 0;
     var s_end: usize = 0;
 
     var count_writer = std.io.countingWriter(writer);
-    const any_count_writer = count_writer.writer().any();
+    const generic_count_writer = count_writer.writer();
 
     while (fmt[i] != 0) {
         if (fmt[i] != '%') {
@@ -90,13 +90,13 @@ fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.buil
             continue;
         }
         // format regular string before % specifier
-        try std.fmt.format(any_count_writer, "{s}", .{fmt[s_start..s_end]});
+        try std.fmt.format(generic_count_writer, "{s}", .{fmt[s_start..s_end]});
         i = i + 1;
         const l = get_code_size(fmt[i..]);
         i = i + get_code_size_len(l);
         const code = fmt[i];
         if (code != 0) {
-            try zig_vfprintf_code(any_count_writer, code, l, va_list);
+            try zig_vfprintf_code(generic_count_writer, code, l, va_list);
             i = i + 1;
         }
         s_start = i;
@@ -108,7 +108,7 @@ fn zig_vfprintf(writer: std.io.AnyWriter, fmt: [*:0]const u8, va_list: *std.buil
     return count_writer.bytes_written;
 }
 
-fn zig_vfprintf_code(writer: std.io.AnyWriter, code: u8, code_len: code_size, va_list: *std.builtin.VaList) !void {
+fn zig_vfprintf_code(writer: anytype, code: u8, code_len: code_size, va_list: *std.builtin.VaList) !void {
     switch (code) {
         'c' => try std.fmt.format(writer, "{c}", .{@as(u8, @truncate(@cVaArg(va_list, c_uint)))}),
         'd','i' => {
