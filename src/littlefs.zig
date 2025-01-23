@@ -22,13 +22,13 @@ export fn lfs_trace_printf(fmt: [*:0]const u8, ...) callconv(.C) c_int {
     fbs.buffer = slice;
     fbs.pos = 0;
 
-    _ = vformat_cfmt(fbs.writer(), fmt, &va_list) catch return 0;
+    const result = c_vfprintf(fbs.writer(), fmt, &va_list);
     std.debug.print("buffer: {s}", .{buf});
     @cVaEnd(&va_list);
-    return 0;
+    return result;
 }
 
-const cfmt_len = enum {
+const code_size = enum {
     none,
     h,
     l,
@@ -41,7 +41,7 @@ const cfmt_len = enum {
     t,
 };
 
-fn get_cfmt_len(fmt: [*:0]const u8) cfmt_len {
+fn get_code_size(fmt: [*:0]const u8) code_size {
     const c1 = fmt[0];
     if (c1 == 0) { return .none; }
     else if (c1 == 'j') { return .j; }
@@ -61,7 +61,7 @@ fn get_cfmt_len(fmt: [*:0]const u8) cfmt_len {
     }
 }
 
-fn get_cfmt_len_size(len: cfmt_len) u8 {
+fn get_code_size_len(len: code_size) u8 {
     return switch (len) {
         .none => 0,
         .hh,.ll => 2,
@@ -69,10 +69,18 @@ fn get_cfmt_len_size(len: cfmt_len) u8 {
     };
 }
 
-fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) !void {
+fn c_vfprintf(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) c_int {
+    const c_uint7 = @Type(.{ .int = .{ .bits = @bitSizeOf(c_int)-1, .signedness = .unsigned } });
+    const count = zig_vfprintf(writer, fmt, va_list) catch return -1;
+    return @intCast(@as(c_uint7, @truncate(count)));
+}
+
+fn zig_vfprintf(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaList) !u64 {
     var i: usize = 0;
     var s_start: usize = 0;
     var s_end: usize = 0;
+
+    const count_writer = std.io.countingWriter(writer);
 
     while (fmt[i] != 0) {
         if (fmt[i] != '%') {
@@ -81,23 +89,25 @@ fn vformat_cfmt(writer: anytype, fmt: [*:0]const u8, va_list: *std.builtin.VaLis
             continue;
         }
         // format regular string before % specifier
-        try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
+        try std.fmt.format(count_writer, "{s}", .{fmt[s_start..s_end]});
         i = i + 1;
-        const l = get_cfmt_len(fmt[i..]);
-        i = i + get_cfmt_len_size(l);
+        const l = get_code_size(fmt[i..]);
+        i = i + get_code_size_len(l);
         const code = fmt[i];
         if (code != 0) {
-            try vformat_cfmt_code(writer, code, l, va_list);
+            try zig_vfprintf_code(count_writer, code, l, va_list);
             i = i + 1;
         }
         s_start = i;
         s_end = i;
     }
 
-    try std.fmt.format(writer, "{s}", .{fmt[s_start..s_end]});
+    try std.fmt.format(count_writer, "{s}", .{fmt[s_start..s_end]});
+
+    return count_writer.bytes_written;
 }
 
-fn vformat_cfmt_code(writer: anytype, code: u8, code_len: cfmt_len, va_list: *std.builtin.VaList) !void {
+fn zig_vfprintf_code(writer: anytype, code: u8, code_len: code_size, va_list: *std.builtin.VaList) !void {
     switch (code) {
         'c' => try std.fmt.format(writer, "{c}", .{@as(u8, @truncate(@cVaArg(va_list, c_uint)))}),
         'd','i' => {
@@ -141,6 +151,7 @@ fn vformat_cfmt_code(writer: anytype, code: u8, code_len: cfmt_len, va_list: *st
             else
                 try std.fmt.format(writer, "{X}", .{@cVaArg(va_list, c_uint)});
         },
+        // use x format instead of * to reflect C pointer formatting
         'p' => try std.fmt.format(writer, "0x{x}", .{@intFromPtr(@cVaArg(va_list, *anyopaque))}),
         's' => try std.fmt.format(writer, "{s}", .{@cVaArg(va_list, [*:0]const u8)}),
         '%' => try std.fmt.format(writer, "%", .{}),
