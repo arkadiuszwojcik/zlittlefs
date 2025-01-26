@@ -148,6 +148,10 @@ pub fn LfsFileSystem(comptime storage_type: type, comptime prealloc: bool) type 
         filecfg_pool: FileCfgMemPool = undefined,
 
         pub fn init(self: *Self, allocator: std.mem.Allocator, storage: *storage_type, options: LfsOptions) !void {
+            std.debug.assert(options.cache_size > 0);
+            std.debug.assert(options.cache_size % storage.read_size == 0);
+            std.debug.assert(options.cache_size % storage.prog_size == 0);
+
             self.allocator = allocator;
             self.storage = storage;
 
