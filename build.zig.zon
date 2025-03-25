@@ -1,12 +1,13 @@
 .{
-    .name = "zlittlefs",
+    .name = .zlittlefs,
+    .fingerprint = 0x4348452855b4493c,
     .version = "0.0.1",
-    .minimum_zig_version = "0.13.0",
+    .minimum_zig_version = "0.14.0",
 
     .dependencies = .{
         .littlefs_c = .{
-            .url = "https://github.com/littlefs-project/littlefs/archive/refs/tags/v2.10.1.tar.gz",
-            .hash = "122029bf36f1d5cfd45a2edaaf27893e092832d3bb39677a7ef7005d54ceb81545de"
+            .url = "https://github.com/littlefs-project/littlefs/archive/refs/tags/v2.10.2.tar.gz",
+            .hash = "1220b31bcc764abe080a6dde17dedc554259eaf685e87908026ac277fe39457cd9d9"
         },
     },
 
